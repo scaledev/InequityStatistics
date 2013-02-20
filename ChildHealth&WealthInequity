@@ -1,0 +1,94 @@
+/*  ForeignAidAvg Income hInequity been inputted and transformed to a dummy variable
+  called DumRet where 0 = below avg foreign aid and 1 = above 
+	Inequity is also included. 
+*/
+
+dm "out; clear; log; clear"; /* These instructions clear the output and log windows */
+
+Data RegPlot;
+Input Country $ Child Inequity ForeignAidAvg;
+
+
+if ForeignAidAvg > .45 then DumRet = 1 ;  	* The dummy variable is created in this step;
+	else DumRet=0;
+Inter = Inequity*DumRet;
+Datalines;
+AU	-0.21	7.00	0.25
+AT	-0.07	4.82	0.52
+
+
+;
+
+proc print;
+
+
+proc sgscatter;
+matrix Child Inequity DumRet Inter; 
+			
+
+
+ods graphics on; 							
+
+ods html file="Step6.html" style=journal;
+
+proc reg ; 									
+title 'Regression of Child on Inequity & DumRet';
+model Child = Inequity DumRet;		 	
+
+proc reg ; 									
+title 'Regression of Child on Inequity & DumRet with Interaction';
+model Child = Inequity DumRet Inter ;		 			
+run;
+
+ods graphics off; 	
+
+	
+
+run; quit;
+
+
+/*  Graphing Program for Question 6b */
+
+dm "out; clear; log; clear"; /* These instructions clear the output and log windows */
+
+
+/* My Data */
+
+Data Countries;
+Input Country $ ChildWB Inequity Foreign_Aid_Giving_Level $ HChildWB HInequity LChildWB LInequity;
+Datalines; /* abbreviated */
+AT	-0.06789808	4.824999809	High	-0.06789808	4.824999809	.	.
+BE	0.04703068	4.599999905	High	0.04703068	4.599999905	.	.
+;
+
+/* Included the high and low data as separate columns so I could easily put to REG lines on a single scatterplot */
+
+proc print data=Countries;
+
+ods graphics on;
+ods rtf;
+/* Creating a style template */
+footnote;		* an attempt to clear an old footnote statement;
+proc template; 						
+		* "How-to" see http://robslink.com/SAS/papers/sg_procs/sgplot.html#pointlabels;
+		* Also,  http://www2.sas.com/proceedings/forum2007/088-2007.pdf;
+ Define style styles.circlefill;
+  Parent=styles.default;
+  Style graphdata1 from graphdata1 / MarkerSymbol="circlefilled" Color=red Contrastcolor=red;
+  Style graphdata2 from graphdata2 / MarkerSymbol="circlefilled" Color=blue Contrastcolor=blue;
+  end;
+ run;
+ods listing style=circlefill;    *Instructs system to use above template;
+
+
+title 'Child Well Being vs. Wealth Inequality';
+proc sgplot;
+scatter x=Inequity y=ChildWB / group=Foreign_Aid_Giving_Level;  *adds the separation into High or Low Foreign Aid;
+REG X = LInequity Y = LChildWB / DATALABEL = Country CLMtransparency=1; 	
+REG X = HInequity Y = HChildWB / DATALABEL = Country CLMtransparency=1;
+yaxis Label="Child Well Being";
+xaxis Label="Wealth Inequality";
+run;
+
+ods graphics off;
+quit;
